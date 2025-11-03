@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Oticas Ceguetas</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  #chat-container { width: 400px; max-width: 100%; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); border-radius: 8px; display: flex; flex-direction: column; }
+  #chat-box { flex-grow: 1; padding: 10px; overflow-y: auto; max-height: 500px; border-bottom: 1px solid #ccc; }
+  .message { margin: 8px 0; padding: 8px 12px; border-radius: 16px; max-width: 80%; }
+  .user-message { align-self: flex-end; background-color: #0084ff; color: white; }
+  .bot-message { align-self: flex-start; background-color: #e5e5ea; color: black; }
+  #input-area { display: flex; padding: 10px; }
+  #input-text { flex-grow: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; }
+  #send-btn { margin-left: 8px; padding: 8px 16px; background-color: #0084ff; border: none; border-radius: 20px; color: white; font-weight: bold; cursor: pointer; }
+  #send-btn:disabled { background-color: #a0c5ff; cursor: default; }
+</style>
+</head>
+<body>
+
+<div id="chat-container">
+  <div id="chat-box"></div>
+  <div id="input-area">
+    <input type="text" id="input-text" placeholder="Digite sua mensagem..." autocomplete="off" />
+    <button id="send-btn" disabled>Enviar</button>
+  </div>
+</div>
+
+<script>
+  const chatBox = document.getElementById('chat-box');
+  const inputText = document.getElementById('input-text');
+  const sendBtn = document.getElementById('send-btn');
+
+  inputText.addEventListener('input', () => {
+    sendBtn.disabled = inputText.value.trim() === '';
+  });
+
+  inputText.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !sendBtn.disabled) {
+      sendMessage();
+    }
+  });
+
+  function appendMessage(text, isUser) {
+    const msgDiv = document.createElement('div');
+    msgDiv.textContent = text;
+    msgDiv.className = 'message ' + (isUser ? 'user-message' : 'bot-message');
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const message = inputText.value.trim();
+    if (!message) return;
+    appendMessage(message, true);
+    inputText.value = '';
+    sendBtn.disabled = true;
+
+    try {
+      const response = await fetch('/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensagem: message })
+      });
+      if (!response.ok) {
+        appendMessage('Erro no servidor: ' + response.statusText, false);
+        return;
+      }
+      const data = await response.json();
+      appendMessage(data.resposta, false);
+    } catch (error) {
+      appendMessage('Erro na conexão: ' + error.message, false);
+    }
+  }
+</script>
+
+</body>
+</html>
